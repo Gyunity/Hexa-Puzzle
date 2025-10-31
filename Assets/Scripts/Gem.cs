@@ -16,7 +16,6 @@ public class Gem : MonoBehaviour
     [SerializeField]
     private Sprite yellowGem;
 
-
     public GemType GemType { get; private set; }
 
     private SpriteRenderer spriteRenderer;

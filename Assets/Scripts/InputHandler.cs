@@ -11,115 +11,76 @@ public class InputHandler : MonoBehaviour
     private Tilemap tilemap;
     [SerializeField]
     private LayerMask gemLayer;
+    [SerializeField]
+    private TileBoardManager tileBoardManager;
 
-    private GameObject slectGem = null;
-    private GameObject swapGem = null;
+    private Vector3Int slectGem;
+    private Vector3Int swapGem;
 
-    private bool moveCheck = true;
+    private Vector3Int resetVec = new Vector3Int(99999,9999,9999);
 
+    private void Start()
+    {
+       SlectedReset();
+    }
 
     void Update()
     {
-        if (!moveCheck || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        if (!tileBoardManager.moveCheck || EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
             return;
 
         if (Input.GetMouseButtonDown(0))
         {
 
-            TryPickGem(Input.mousePosition, out slectGem);
-            
+            TryPickGemCell(Input.mousePosition, out slectGem);
+            Debug.Log($"slectGem : {slectGem}");
+            Debug.Log($"slectGemDic: {tileBoardManager.GetGemMap(slectGem).GemType}");
+            Debug.Log($"slectGemPos: {tileBoardManager.GetGemMap(slectGem).transform.position}");
         }
-        else if (Input.GetMouseButton(0) && slectGem && !swapGem)
+        else if (Input.GetMouseButton(0) && slectGem != resetVec)
         {
-            TryPickGem(Input.mousePosition, out swapGem);
-            GemSwap(slectGem, swapGem);
+            if(TryPickGemCell(Input.mousePosition, out swapGem))
+            {
+            //Debug.Log($"Ω∫ø“¿Î:{swapGem}");
+            tileBoardManager.TrySwap(slectGem, swapGem);
+            SlectedReset();
+
+            }
         }
     }
 
-    private void TryPickGem(Vector3 screenPos, out GameObject hitGem)
-    {
-        Vector3 world = ScreenToWorldOnTilePlane(screenPos);
-        Vector2 origin = world;             
-        Vector2 dir = Vector2.zero;         
-
-
-        RaycastHit2D hit = Physics2D.Raycast(origin, dir, 1000, gemLayer);
-
-        if (hit)
-        {
-            if (hit.transform.gameObject == slectGem)
-            {
-                hitGem = null;
-            }
-            else
-            {
-                hitGem = hit.transform.gameObject;
-            }
-        }
-        else
-        {
-            hitGem = null;
-        }
-
-
-    }
+   
 
     private Vector3 ScreenToWorldOnTilePlane(Vector3 screenPos)
     {
         float planeZ = tilemap.transform.position.z;
-        Vector3 sp = new(
-            screenPos.x, screenPos.y,
-            cam.orthographic ? cam.nearClipPlane : Mathf.Abs(planeZ - cam.transform.position.z)
-        );
+        Vector3 sp = new(screenPos.x, screenPos.y, cam.nearClipPlane);
         return cam.ScreenToWorldPoint(sp);
     }
-
-    private void GemSwap(GameObject aGem, GameObject bGem)
+    private bool TryPickGemCell(Vector3 screenPos, out Vector3Int cell)
     {
-        if (slectGem != null && swapGem != null)
+        Gem gem;
+        Vector3 world = ScreenToWorldOnTilePlane(screenPos);
+        var col = Physics2D.OverlapPoint(world, gemLayer); 
+        if (col)
         {
-            StartCoroutine(SwapPosition(aGem.transform, bGem.transform));
-
-            slectGem = null;
-            swapGem = null;
-
+            gem = col.GetComponentInParent<Gem>();
+            if (gem != null)
+            {
+                cell = tilemap.WorldToCell(gem.transform.position);
+                if (cell == slectGem)
+                    return false;
+                return true;
+            }
         }
-
+        gem = null;
+        cell = default;
+        return false;
     }
-
-    private IEnumerator SwapPosition(Transform aGem, Transform bGem, float duration = 0.25f)
+    private void SlectedReset()
     {
-        moveCheck = false;
-        Vector3 aStart = aGem.position;
-        Vector3 bStart = bGem.position;
+        slectGem = resetVec;
+        swapGem = resetVec;
 
-        float time = 0f;
-        while (time < duration)
-        {
-            time += Time.deltaTime;
-            float du = Mathf.Clamp01(time/duration);
-
-            aGem.position = Vector3.LerpUnclamped(aStart, bStart, du);
-            bGem.position = Vector3.LerpUnclamped(bStart, aStart, du);
-            yield return null;
-        }
-        aGem.position = bStart;
-        bGem.position = aStart;
-
-        yield return new WaitForSeconds(duration);
-
-        time = 0f;
-        while (time < duration)
-        {
-            time += Time.deltaTime;
-            float du = Mathf.Clamp01(time / duration);
-
-            aGem.position = Vector3.LerpUnclamped(bStart, aStart, du);
-            bGem.position = Vector3.LerpUnclamped(aStart, bStart, du);
-            yield return null;
-        }
-        aGem.position = aStart;
-        bGem.position = bStart;
-        moveCheck = true;
     }
 }
