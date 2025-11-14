@@ -1,5 +1,4 @@
 🎮 PuzzlePuzzle
-📱 APK 다운로드
 🧩 구현 내용
 🔹 블럭 시스템
 
