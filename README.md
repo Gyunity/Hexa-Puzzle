@@ -1,5 +1,7 @@
-🎮 PuzzlePuzzle
+🎮 Hexa Puzzle
+
 🧩 구현 내용
+
 🔹 블럭 시스템
 
 직선으로 3개 이상의 블럭이 모이면 블럭 파괴
